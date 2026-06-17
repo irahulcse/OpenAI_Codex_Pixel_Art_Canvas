@@ -51,7 +51,7 @@ python3 -m pytest tests/test_app.py -v
 The app includes a `Procfile` for platforms that support Gunicorn:
 
 ```text
-web: gunicorn app:app
+web: gunicorn --bind 0.0.0.0:$PORT app:app
 ```
 
 For a simple demo deployment, SQLite will work, but saved canvases may not persist across deploys or restarts on platforms with ephemeral filesystems. For production, move to a managed database such as PostgreSQL.
