@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Gallery | Pixel Art Canvas</title>
+    <style>
+      :root {
+        color: #1f2933;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+
+      body {
+        margin: 0;
+        background: #f4f7f9;
+      }
+
+      main {
+        width: min(1040px, calc(100vw - 32px));
+        margin: 32px auto;
+      }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+
+      .nav-link {
+        color: #1769aa;
+        font-weight: 700;
+      }
+
+      .gallery-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+        gap: 18px;
+      }
+
+      .canvas-card {
+        display: grid;
+        gap: 10px;
+        padding: 12px;
+        background: #ffffff;
+        border: 1px solid #d8dee6;
+        border-radius: 8px;
+      }
+
+      .preview {
+        width: 100%;
+        aspect-ratio: 1;
+        image-rendering: pixelated;
+        border: 1px solid #9aa6b2;
+        background: #ffffff;
+      }
+
+      .canvas-name {
+        margin: 0;
+        overflow-wrap: anywhere;
+        font-size: 1rem;
+      }
+
+      .saved-date {
+        margin: 0;
+        color: #52616f;
+        font-size: 0.9rem;
+      }
+
+      .download-button {
+        width: fit-content;
+        padding: 9px 13px;
+        border-radius: 6px;
+        background: #1769aa;
+        color: #ffffff;
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      .download-button:hover {
+        background: #125387;
+      }
+
+      .empty-state {
+        padding: 24px;
+        background: #ffffff;
+        border: 1px solid #d8dee6;
+        border-radius: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header class="topbar">
+        <h1>Gallery</h1>
+        <a class="nav-link" href="{{ url_for('index') }}">Back to drawing</a>
+      </header>
+
+      {% if canvases %}
+        <section class="gallery-grid" aria-label="Saved canvases">
+          {% for canvas in canvases %}
+            <article class="canvas-card">
+              <canvas
+                class="preview"
+                width="128"
+                height="128"
+                data-pixels='{{ canvas.pixel_data | tojson }}'
+                aria-label="Preview of {{ canvas.name }}"
+              ></canvas>
+              <h2 class="canvas-name">{{ canvas.name }}</h2>
+              <p class="saved-date">Saved {{ canvas.created_at.strftime("%b %d, %Y %I:%M %p") }}</p>
+              <a class="download-button" href="{{ url_for('download_canvas', canvas_id=canvas.id) }}">Download</a>
+            </article>
+          {% endfor %}
+        </section>
+      {% else %}
+        <section class="empty-state">
+          <p>No canvases saved yet.</p>
+        </section>
+      {% endif %}
+    </main>
+
+    <script>
+      const gridSize = 32;
+
+      document.querySelectorAll(".preview").forEach((canvas) => {
+        const context = canvas.getContext("2d");
+        const pixels = JSON.parse(canvas.dataset.pixels);
+        const cellSize = canvas.width / gridSize;
+
+        pixels.forEach((row, rowIndex) => {
+          row.forEach((color, columnIndex) => {
+            context.fillStyle = color;
+            context.fillRect(columnIndex * cellSize, rowIndex * cellSize, cellSize, cellSize);
+          });
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pixel Art Canvas</title>
+    <style>
+      :root {
+        color: #1f2933;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+
+      body {
+        margin: 0;
+        background: #f4f7f9;
+      }
+
+      main {
+        width: min(960px, calc(100vw - 32px));
+        margin: 32px auto;
+      }
+
+      .workspace {
+        display: grid;
+        grid-template-columns: minmax(320px, 512px) minmax(220px, 1fr);
+        gap: 24px;
+        align-items: start;
+      }
+
+      #pixel-canvas {
+        width: min(100%, 512px);
+        aspect-ratio: 1;
+        image-rendering: pixelated;
+        background: #ffffff;
+        border: 1px solid #9aa6b2;
+        cursor: crosshair;
+        touch-action: none;
+      }
+
+      .controls {
+        display: grid;
+        gap: 18px;
+      }
+
+      .palette {
+        display: grid;
+        grid-template-columns: repeat(4, 44px);
+        gap: 10px;
+      }
+
+      .swatch {
+        width: 44px;
+        height: 44px;
+        border: 2px solid #d8dee6;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+
+      .swatch[aria-pressed="true"] {
+        border-color: #111827;
+        box-shadow: 0 0 0 2px #ffffff, 0 0 0 5px #111827;
+      }
+
+      label {
+        display: grid;
+        gap: 8px;
+        font-weight: 700;
+      }
+
+      input {
+        box-sizing: border-box;
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #b8c2cc;
+        border-radius: 6px;
+        font: inherit;
+      }
+
+      button {
+        width: fit-content;
+        padding: 10px 16px;
+        border: 0;
+        border-radius: 6px;
+        background: #1769aa;
+        color: #ffffff;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background: #125387;
+      }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+
+      .nav-link {
+        color: #1769aa;
+        font-weight: 700;
+      }
+
+      .message {
+        min-height: 24px;
+        font-weight: 700;
+      }
+
+      .message.success {
+        color: #0f7b45;
+      }
+
+      .message.error {
+        color: #b42318;
+      }
+
+      @media (max-width: 760px) {
+        .workspace {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header class="topbar">
+        <h1>Pixel Art Canvas</h1>
+        <a class="nav-link" href="{{ url_for('gallery') }}">View gallery</a>
+      </header>
+      <div class="workspace">
+        <canvas id="pixel-canvas" width="512" height="512" aria-label="32 by 32 pixel drawing canvas"></canvas>
+
+        <section class="controls" aria-label="Drawing controls">
+          <div>
+            <h2>Palette</h2>
+            <div class="palette" id="palette"></div>
+          </div>
+
+          <form id="save-form">
+            <label for="canvas-name">
+              Canvas name
+              <input id="canvas-name" name="name" maxlength="120" required>
+            </label>
+            <button type="submit">Save Canvas</button>
+          </form>
+
+          <p class="message" id="message" role="status" aria-live="polite"></p>
+        </section>
+      </div>
+    </main>
+
+    <script>
+      const gridSize = 32;
+      const canvas = document.querySelector("#pixel-canvas");
+      const context = canvas.getContext("2d");
+      const palette = document.querySelector("#palette");
+      const saveForm = document.querySelector("#save-form");
+      const nameInput = document.querySelector("#canvas-name");
+      const message = document.querySelector("#message");
+      const colors = [
+        "#000000",
+        "#ffffff",
+        "#e63946",
+        "#f4a261",
+        "#f1c40f",
+        "#2a9d8f",
+        "#457b9d",
+        "#6d597a",
+        "#ffafcc",
+        "#8ac926",
+        "#1982c4",
+        "#6a4c93"
+      ];
+      const pixels = Array.from(
+        { length: gridSize },
+        () => Array.from({ length: gridSize }, () => "#ffffff")
+      );
+      let selectedColor = colors[0];
+      let isDrawing = false;
+
+      function drawGrid() {
+        const cellSize = canvas.width / gridSize;
+
+        for (let row = 0; row < gridSize; row += 1) {
+          for (let column = 0; column < gridSize; column += 1) {
+            context.fillStyle = pixels[row][column];
+            context.fillRect(column * cellSize, row * cellSize, cellSize, cellSize);
+          }
+        }
+
+        context.strokeStyle = "#d8dee6";
+        context.lineWidth = 1;
+        for (let line = 0; line <= gridSize; line += 1) {
+          const position = line * cellSize;
+          context.beginPath();
+          context.moveTo(position, 0);
+          context.lineTo(position, canvas.height);
+          context.stroke();
+          context.beginPath();
+          context.moveTo(0, position);
+          context.lineTo(canvas.width, position);
+          context.stroke();
+        }
+      }
+
+      function setPixel(event) {
+        const bounds = canvas.getBoundingClientRect();
+        const column = Math.floor(((event.clientX - bounds.left) / bounds.width) * gridSize);
+        const row = Math.floor(((event.clientY - bounds.top) / bounds.height) * gridSize);
+
+        if (row < 0 || row >= gridSize || column < 0 || column >= gridSize) {
+          return;
+        }
+
+        pixels[row][column] = selectedColor;
+        drawGrid();
+      }
+
+      function setMessage(text, type) {
+        message.textContent = text;
+        message.className = `message ${type || ""}`.trim();
+      }
+
+      colors.forEach((color, index) => {
+        const button = document.createElement("button");
+        button.className = "swatch";
+        button.type = "button";
+        button.style.backgroundColor = color;
+        button.setAttribute("aria-label", color);
+        button.setAttribute("aria-pressed", index === 0 ? "true" : "false");
+        button.addEventListener("click", () => {
+          selectedColor = color;
+          document.querySelectorAll(".swatch").forEach((swatch) => {
+            swatch.setAttribute("aria-pressed", swatch === button ? "true" : "false");
+          });
+        });
+        palette.appendChild(button);
+      });
+
+      canvas.addEventListener("pointerdown", (event) => {
+        isDrawing = true;
+        canvas.setPointerCapture(event.pointerId);
+        setPixel(event);
+      });
+      canvas.addEventListener("pointermove", (event) => {
+        if (isDrawing) {
+          setPixel(event);
+        }
+      });
+      canvas.addEventListener("pointerup", () => {
+        isDrawing = false;
+      });
+      canvas.addEventListener("pointercancel", () => {
+        isDrawing = false;
+      });
+
+      saveForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        setMessage("Saving...", "");
+
+        const response = await fetch("/canvases", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            name: nameInput.value,
+            pixel_data: pixels
+          })
+        });
+        const result = await response.json();
+
+        if (response.ok) {
+          setMessage(result.message, "success");
+          saveForm.reset();
+        } else {
+          setMessage(result.message || "Unable to save canvas.", "error");
+        }
+      });
+
+      drawGrid();
+    </script>
+  </body>
+</html>
