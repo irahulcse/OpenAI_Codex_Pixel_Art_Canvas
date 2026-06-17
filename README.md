@@ -1,6 +1,6 @@
 # Pixel Art Canvas
 
-A Flask pixel art app for drawing on a 32x32 grid, saving canvases, browsing a gallery, and downloading artwork as PNG files.
+A Flask pixel art app for drawing on a 32x32 grid, saving canvases, browsing a gallery, and downloading artwork as PNG files. Built as a learning-by-doing Codex project.
 
 ## Features
 
