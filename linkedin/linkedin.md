@@ -62,7 +62,10 @@ Thanks again for reading till the end. I will continue believing and exploring t
 
 
 GitHub Repo Link: https://github.com/irahulcse/OpenAI_Codex_Pixel_Art_Canvas
-Repo Mix Link: 
+Repo Mix Link: https://github.com/irahulcse/OpenAI_Codex_Pixel_Art_Canvas/blob/main/repomix/repomix-output-irahulcse-OpenAI_Codex_Pixel_Art_Canvas.md
+
 
 
 https://www.educative.io/verify-certificate/NRNV8SC923
+
+#WrittenByHuman #GrammerCheckedWithGrammarly
